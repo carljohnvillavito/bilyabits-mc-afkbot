@@ -1,0 +1,14 @@
+services:
+  afk-bot:
+    build: .
+    container_name: aternos-afk-bot
+    restart: unless-stopped
+    environment:
+      - MC_HOST=TheHulagens.aternos.me
+      - MC_PORT=40436
+      - MC_USERNAME=AFKBot
+    volumes:
+      # Persist Microsoft auth tokens so you don't have to re-login
+      - ./auth:/app/auth
+    stdin_open: true
+    tty: true
