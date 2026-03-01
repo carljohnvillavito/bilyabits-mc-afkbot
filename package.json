@@ -18,7 +18,8 @@
   "author": "Carl John Villavito",
   "license": "MIT",
   "dependencies": {
-    "bedrock-protocol": "^3.52.0"
+    "bedrock-protocol": "^3.52.0",
+    "express": "^5.2.1"
   },
   "engines": {
     "node": ">=18"
