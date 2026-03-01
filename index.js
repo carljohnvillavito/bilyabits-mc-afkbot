@@ -1,5 +1,7 @@
 const bedrock = require('bedrock-protocol');
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const WEB_PORT = parseInt(process.env.PORT) || 10000;
@@ -22,6 +24,45 @@ let antiAfkInterval = null;
 let reconnectTimeout = null;
 let isConnecting = false;
 let botStatus = 'starting';
+let webServerStarted = false;
+
+function isAuthConfigured() {
+  try {
+    const authDir = path.resolve(config.profilesFolder);
+    if (!fs.existsSync(authDir)) return false;
+    const files = fs.readdirSync(authDir);
+    return files.length > 0;
+  } catch (e) {
+    return false;
+  }
+}
+
+function startWebServer() {
+  if (webServerStarted) return;
+  webServerStarted = true;
+
+  app.get('/', (req, res) => {
+    res.json({
+      name: 'Bilyabits MC AFK Bot',
+      status: botStatus,
+      target: `${config.host}:${config.port}`,
+      mode: config.afkMode,
+      reconnectAttempts: reconnectAttempts,
+      uptime: process.uptime()
+    });
+  });
+
+  app.get('/health', (req, res) => {
+    res.status(200).send('OK');
+  });
+
+  app.listen(WEB_PORT, '0.0.0.0', () => {
+    console.log('='.repeat(50));
+    console.log('[Web] Server is now listening');
+    console.log(`[Web] http://0.0.0.0:${WEB_PORT}`);
+    console.log('='.repeat(50));
+  });
+}
 
 function startAntiAfk() {
   if (antiAfkInterval) clearInterval(antiAfkInterval);
@@ -101,6 +142,7 @@ function connect() {
       isConnecting = false;
       botStatus = 'connected';
       startAntiAfk();
+      startWebServer();
     });
 
     client.on('spawn', () => {
@@ -189,30 +231,27 @@ const shutdown = () => {
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
-app.get('/', (req, res) => {
-  res.json({
-    name: 'Bilyabits MC AFK Bot',
-    status: botStatus,
-    target: `${config.host}:${config.port}`,
-    mode: config.afkMode,
-    reconnectAttempts: reconnectAttempts,
-    uptime: process.uptime()
-  });
-});
-
-app.get('/health', (req, res) => {
-  res.status(200).send('OK');
-});
-
-app.listen(WEB_PORT, '0.0.0.0', () => {
+async function startup() {
   console.log('='.repeat(50));
   console.log('Bilyabits Minecraft Bedrock AFK Bot');
   console.log('='.repeat(50));
-  console.log(`Web server: http://0.0.0.0:${WEB_PORT}`);
   console.log(`Target: ${config.host}:${config.port}`);
   console.log(`Mode:   ${config.afkMode.toUpperCase()}`);
   console.log('='.repeat(50));
 
+  const hasAuth = isAuthConfigured();
+
+  if (hasAuth) {
+    console.log('[Auth] Microsoft account found in auth folder. Using saved credentials.');
+  } else {
+    console.log('[Auth] No Microsoft account configured. Authentication will be required.');
+    console.log('[Auth] You will be prompted to sign in with your Microsoft account...');
+  }
+
+  console.log('[Bot] Starting connection to Minecraft server...');
+  console.log('[Bot] Web server will start once the bot joins the server.');
   connect();
-});
+}
+
+startup();
 
