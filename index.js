@@ -7,7 +7,7 @@ const app = express();
 const WEB_PORT = parseInt(process.env.PORT) || 3000;
 
 const config = {
-  host: process.env.MC_HOST || 'TheHulagens.aternos.me',
+  host: process.env.MC_HOST || 'thehulagens.aternos.me',
   port: parseInt(process.env.MC_PORT) || 40436,
   username: process.env.MC_USERNAME || 'emeraldgod3v',
   offline: false,
